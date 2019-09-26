@@ -93,9 +93,6 @@ class wall_hugger():
 	#	print(right)
 
 if __name__ == '__main__':
-	for i in range(-135,136):
-		print(str(i) + " --> " + str(wall_hugger().angle_to_range(i)))
-
 	try:
 		wall_hugger()
 	except rospy.ROSInterruptException: pass
