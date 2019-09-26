@@ -5,17 +5,21 @@ import rospy
 from geometry_msgs.msg import Twist
 from sensor_msgs.msg import LaserScan
 
+SPEED = 1.0
+FPS = 20
+
 class wall_hugger():
 
-	def __init__(self, left=0.0, front=0.0, right=0.0, distance=1.0, threshold=0.3):
-		self.left = left
-		self.front = front
-		self.right = right
+	def __init__(self, distance=1.0, threshold=2.0, wall_tolerance=0.2, bearing_tolerance=2):
+		self.left = 0.0
+		self.bearing = 0
 		self.distance = distance
 		self.threshold = threshold
+		self.wall_tolerance = wall_tolerance
+		self.bearing_tolerance = bearing_tolerance
 
 		rospy.init_node('wall_hugger', anonymous=True)
-		rate = rospy.Rate(5)
+		rate = rospy.Rate(FPS)
 
 		velocity_publisher = rospy.Publisher('/cmd_vel', Twist, queue_size=10)
 		scan_subscriber = rospy.Subscriber('/front/scan', LaserScan, self.callback)
@@ -24,15 +28,38 @@ class wall_hugger():
 
 		while not rospy.is_shutdown():
 
-			vel_msg.linear.x = 1
+			print("---------------------")
+			print("Bearing: " + str(self.bearing))
+			print("Distance: " + str(self.left))
+
+			vel_msg.linear.x = SPEED
 			vel_msg.angular.z = 0
 
-			print(str(self.left - self.distance))
+			separation = self.left - self.distance
+			keep_wall_at = 90
 
-			if self.left - self.distance > self.threshold:
-				vel_msg.angular.z = (self.left - self.distance) * 2
-			elif self.distance - self.left > self.threshold:
-				vel_msg.angular.z = -1 * (self.left - self.threshold) * 2
+			if abs(separation) < self.threshold:
+				print("Wall found!")
+				if separation > wall_tolerance:
+					keep_wall_at = 80
+					print("Moving closer to wall.")
+				elif separation < -wall_tolerance:
+					keep_wall_at = 100
+					print("Moving further from wall.")
+
+				correction = abs(keep_wall_at - self.bearing) * (5.0 / 90.0)
+
+				if self.bearing < keep_wall_at - bearing_tolerance:
+					vel_msg.angular.z = -1 * correction
+					print("Correcting right by " + str(correction))
+				elif self.bearing > keep_wall_at + bearing_tolerance:
+					vel_msg.angular.z = correction
+					print("Correcting left by " + str(correction))
+				else:
+					print("Cruising...")
+#				vel_msg.angular.z = (self.left - self.distance)
+			else:
+				print("Searching for wall...")
 
 			velocity_publisher.publish(vel_msg)
 
@@ -50,12 +77,16 @@ class wall_hugger():
 			if left < smallest:
 				smallest = left
 				index = i
-#		print(index)
 		self.left = smallest
+		self.bearing = index
 
-#		self.left = msg.ranges[self.angle_to_range(90)]
-		self.front = msg.ranges[self.angle_to_range(0)]
-		self.right = msg.ranges[self.angle_to_range(-90)]
+#		print("Approaching wall at " + str(index) + " degeres...")
+#		print("Distance: " + str(smallest))
+
+#		self.l0 = msg.ranges[self.angle_to_range(90)]
+#		self.l2 = msg.ranges[self.angle_to_range(60)]
+#		self.front = msg.ranges[self.angle_to_range(0)]
+#		self.right = msg.ranges[self.angle_to_range(-90)]
 
 	#	print(left)
 	#	print(front)
