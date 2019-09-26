@@ -1,6 +1,5 @@
 #!/usr/bin/python
 
-import time
 import rospy
 from geometry_msgs.msg import Twist
 from sensor_msgs.msg import LaserScan
@@ -57,7 +56,6 @@ class wall_hugger():
 					print("Correcting left by " + str(correction))
 				else:
 					print("Cruising...")
-#				vel_msg.angular.z = (self.left - self.distance)
 			else:
 				print("Searching for wall...")
 
@@ -73,24 +71,11 @@ class wall_hugger():
 		index = 0
 		for i in range(0, 135):
 			left = msg.ranges[self.angle_to_range(i)]
-#			print(left, smallest)
 			if left < smallest:
 				smallest = left
 				index = i
 		self.left = smallest
 		self.bearing = index
-
-#		print("Approaching wall at " + str(index) + " degeres...")
-#		print("Distance: " + str(smallest))
-
-#		self.l0 = msg.ranges[self.angle_to_range(90)]
-#		self.l2 = msg.ranges[self.angle_to_range(60)]
-#		self.front = msg.ranges[self.angle_to_range(0)]
-#		self.right = msg.ranges[self.angle_to_range(-90)]
-
-	#	print(left)
-	#	print(front)
-	#	print(right)
 
 if __name__ == '__main__':
 	try:
